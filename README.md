@@ -25,4 +25,5 @@ After having build the binary with either `ifort` or `gfortran`, simply move it 
 
 
 ## Literature
-to be updated
+- P. Pracht, D.F. Grant, S. Grimme, *Journal of Chemical Theory and Computation*, **2020**,
+  DOI: [10.1021/acs.jctc.0c00877](https://pubs.acs.org/doi/abs/10.1021/acs.jctc.0c00877)
