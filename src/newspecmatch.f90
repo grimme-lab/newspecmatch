@@ -34,7 +34,7 @@ contains
 ! For both spectra a linear vector is constructed which can then be used for
 ! the calculation of matchscores
 !=============================================================================!
-   subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,norm_method,verbose)
+   subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,fscal2,norm_method,verbose)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
@@ -45,7 +45,7 @@ contains
       type(spectrum)   :: spec
       type(spectrum)   :: spec2
       real(wp) :: xmin,xmax,dx,dxref
-      real(wp) :: fscal
+      real(wp) :: fscal,fscal2
       real(wp) :: ithr,fwhm
       integer :: i
 
@@ -101,15 +101,20 @@ contains
          call expand_ref(spec,dx,xmin,xmax,ithr)
          !call expand_ref2(spec,dx,xmin,xmax,ithr,fwhm)
       else
+         !-- apply frequency scaling factor if required
+         spec%peakx = spec%peakx * fscal
+         if(verbose .and. fscal.ne.1.0d0)then
+            write(*,'(1x,a,f12.4)') 'frequency scaling factor for first theoretical spectrum',fscal
+         endif
          call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm,norm_method)
       endif
 
       !-- then the (theoretical) spectrum
       if(spec2%spectype == type_theo)then
          !-- apply frequency scaling factor if required
-         spec2%peakx = spec2%peakx * fscal
-         if(verbose .and. fscal.ne.1.0d0)then
-            write(*,'(1x,a,f12.4)') 'frequency scaling factor',fscal
+         spec2%peakx = spec2%peakx * fscal2
+         if(verbose .and. fscal2.ne.1.0d0)then
+            write(*,'(1x,a,f12.4)') 'frequency scaling factor for second theoretical spectrum',fscal2
          endif
       endif
       call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
@@ -139,7 +144,7 @@ contains
          call spec%plot('ref.dat')
       endif
 
-      call calculate_scores(spec,spec2,verbose)
+      call calculate_scores(spec,spec2,norm_method,verbose)
 
       return
    end subroutine specmatch
@@ -244,7 +249,7 @@ contains
 
 
       call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
-      call calculate_scores(spec,spec2,.false.,scores)
+      call calculate_scores(spec,spec2,norm_method,.false.,scores)
       scold = scores(ss)
 
 
@@ -268,14 +273,14 @@ contains
          spec2%peakx = specup2%peakx * fscal
          call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
-         call calculate_scores(spec,spec2,.false.,scores)
+         call calculate_scores(spec,spec2,norm_method,.false.,scores)
          g = scores(ss)
 
          fscal = fscal - 2.0d0*dscal
          spec2%peakx = specup2%peakx * fscal
          call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
-         call calculate_scores(spec,spec2,.false.,scores)
+         call calculate_scores(spec,spec2,norm_method,.false.,scores)
          g = (g-scores(ss))/(2.0d0*dscal)
 
          fscal = fscal + dscal !back to original
@@ -283,7 +288,7 @@ contains
          spec2%peakx = specup2%peakx * fscal
          call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
-         call calculate_scores(spec,spec2,.false.,scores)
+         call calculate_scores(spec,spec2,norm_method,.false.,scores)
          scurr = scores(ss)
 
          write(*,'(i5,3x,f6.4,4x,f8.4,4x,f8.4)')iter,scurr,fscal,g
@@ -575,12 +580,14 @@ contains
 !===========================================================================!
 ! Compute matchscores from the tensors of intensities
 !===========================================================================!
-   subroutine calculate_scores(ref,comp,verbose,scores)
+   subroutine calculate_scores(ref,comp,norm_method,verbose,scores)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
       type(spectrum) :: ref     !reference spectrum
       type(spectrum) :: comp    !computed spectrum
+      character(len=*) :: norm_method
+      character(len=:), allocatable :: num_norm_method
       logical :: verbose
       real(wp) :: norm
       real(wp) :: msc,euc
@@ -600,9 +607,14 @@ contains
 
       !-- this second normalization was in the original code,
       !   right before the matchscore calculation
-      call ref%numnorm(norm,'msc')
+      if (norm_method == "none") then
+         num_norm_method = "none"
+      else
+         num_norm_method = "msc"
+      endif
+      call ref%numnorm(norm,num_norm_method)
       ref%ints = ref%ints*norm
-      call comp%numnorm(norm,'msc')
+      call comp%numnorm(norm,num_norm_method)
       comp%ints = comp%ints*norm
 
       call calculate_msceuc(ref,comp,msc,euc)
@@ -618,7 +630,6 @@ contains
       if(scoreprint)then
          write(*,'(f6.4,1x,f6.4,1x,f6.4,1x,f6.4)') msc,euc,pcc,scc
       endif
-      !write(*,'(f6.4,1x,f6.4,1x,f6.4)') msc,euc,pcc
 
       if(present(scores))then
          scores(1) = msc

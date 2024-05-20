@@ -657,7 +657,8 @@ contains
          norm = 1.0d0 / sqrt(summe)
        case( 'max','maxpeak' )
          norm = 1.0d0 / maxval(self%ints,1)
-
+       case('none','') !-- no normalization --
+         continue
        case( 'msc','special1' )
          do i=1,self%nlines
             self%ints(i)  = self%ints(i)**0.5d0

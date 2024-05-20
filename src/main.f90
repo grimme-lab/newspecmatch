@@ -36,7 +36,7 @@ program NEWSPECMATCH
    real(wp) :: noisecut
    real(wp) :: wid
    real(wp) :: xmin,xmax,dx
-   real(wp) :: fscal
+   real(wp) :: fscal,fscal2
    real(wp) :: dummy
    integer :: npoints
 
@@ -53,6 +53,7 @@ program NEWSPECMATCH
    xmax = 0.0d0
    dx = 1.0d0
    fscal = 1.0d0     !-- scaling factor for calculated frequencies
+   fscal2 = 1.0d0     !-- scaling factor for calculated frequencies
 
    !npoints = nint(xmax-xmin) !-- number of points in new plot
    norm='sqrt' !-- normalization method 'sqrt'
@@ -162,6 +163,12 @@ program NEWSPECMATCH
             read(atmp,*,iostat=io) dummy
             if(io==0)fscal=dummy
          endif
+       case( '-fscal2' )
+         if(i+1 .le. args)then
+            call getarg(i+1,atmp)
+            read(atmp,*,iostat=io) dummy
+            if(io==0)fscal2=dummy
+         endif
        case default
          continue
       end select ARGPARSER
@@ -176,7 +183,7 @@ program NEWSPECMATCH
 !------------------------------------------------------------------------------------------------
    select case( RUNTYPE )
     case( 0 )
-      call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,norm,verbose)
+      call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,fscal2,norm,verbose)
     case( 1 )
       call specplot(fname,xmin,xmax,dx,wid,noisecut,fscal,norm,verbose)
     case( 2 )
