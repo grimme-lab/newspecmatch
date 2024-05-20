@@ -1,6 +1,6 @@
-PROG = newspecmatch
+PROG = ../build/newspecmatch
 
-OBJDIR = build
+OBJDIR = ../build
 #--------------------------------------------------------------------------
  OSTYPE=LINUXI
  #MKLROOT=/opt/intel/mkl
