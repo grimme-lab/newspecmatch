@@ -34,16 +34,16 @@ contains
 ! For both spectra a linear vector is constructed which can then be used for
 ! the calculation of matchscores
 !=============================================================================!
-   subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+   subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,norm_method,verbose)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
 
       character(len=*) :: fname
       character(len=*) :: bname
+      character(len=*) :: norm_method
       type(spectrum)   :: spec
       type(spectrum)   :: spec2
-      real(wp) :: norm
       real(wp) :: xmin,xmax,dx,dxref
       real(wp) :: fscal
       real(wp) :: ithr,fwhm
@@ -85,6 +85,10 @@ contains
          dx=dxref
       endif
 
+      if(verbose)then
+         write(*,'(/,1x,a,a)') "Normalization method: ",norm_method
+      endif
+
       call determine_dim(spec,xmin,xmax)
       if(verbose)then
          write(*,*)
@@ -97,7 +101,7 @@ contains
          call expand_ref(spec,dx,xmin,xmax,ithr)
          !call expand_ref2(spec,dx,xmin,xmax,ithr,fwhm)
       else
-         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm)
+         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm,norm_method)
       endif
 
       !-- then the (theoretical) spectrum
@@ -108,7 +112,7 @@ contains
             write(*,'(1x,a,f12.4)') 'frequency scaling factor',fscal
          endif
       endif
-      call match_to_ref(spec,spec2,fwhm,ithr)
+      call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
 
       if(verbose)then
          write(*,'(1x,a,f12.2,1x,a,i0)') '  dx ',dx,'points ',spec%nlines
@@ -144,13 +148,14 @@ contains
 ! alternative specmatch routine to automatically
 ! determine a scaling factor for the theoretical spectrum
 !=============================================================================!
-   subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+   subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,norm_method,verbose)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
 
       character(len=*) :: fname
       character(len=*) :: bname
+      character(len=*) :: norm_method
       type(spectrum)   :: spec
       type(spectrum)   :: spec2
       type(spectrum)   :: specup
@@ -218,7 +223,7 @@ contains
          call expand_ref(spec,dx,xmin,xmax,ithr)
          !call expand_ref2(spec,dx,xmin,xmax,ithr,fwhm)
       else
-         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm)
+         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm,norm_method)
       endif
 
       if(verbose)then
@@ -238,7 +243,7 @@ contains
       g = 0.0d0
 
 
-      call match_to_ref(spec,spec2,fwhm,ithr)
+      call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
       call calculate_scores(spec,spec2,.false.,scores)
       scold = scores(ss)
 
@@ -261,14 +266,14 @@ contains
          !--- numerical gradient
          fscal = fscal + dscal
          spec2%peakx = specup2%peakx * fscal
-         call match_to_ref(spec,spec2,fwhm,ithr)
+         call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
          call calculate_scores(spec,spec2,.false.,scores)
          g = scores(ss)
 
          fscal = fscal - 2.0d0*dscal
          spec2%peakx = specup2%peakx * fscal
-         call match_to_ref(spec,spec2,fwhm,ithr)
+         call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
          call calculate_scores(spec,spec2,.false.,scores)
          g = (g-scores(ss))/(2.0d0*dscal)
@@ -276,7 +281,7 @@ contains
          fscal = fscal + dscal !back to original
          fscal = fscal + scalscal*g !apply grad
          spec2%peakx = specup2%peakx * fscal
-         call match_to_ref(spec,spec2,fwhm,ithr)
+         call match_to_ref(spec,spec2,fwhm,ithr,norm_method)
          spec%ints = specup%ints
          call calculate_scores(spec,spec2,.false.,scores)
          scurr = scores(ss)
@@ -483,7 +488,7 @@ contains
       return
    end subroutine expand_ref2
 
-   subroutine expand_ref3(ref,dx,xmin,xmax,ithr,fwhm)
+   subroutine expand_ref3(ref,dx,xmin,xmax,ithr,fwhm,norm_method)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
@@ -493,6 +498,7 @@ contains
       real(wp) :: summe,norm
       real(wp),allocatable :: nf(:)
       real(wp) :: counter
+      character(len=*) :: norm_method
       integer :: n,i
 
       summe= (xmax - xmin) / dx
@@ -505,7 +511,7 @@ contains
       enddo
       ref%xmi = xmin
       ref%xma = xmax
-      call ref%ananorm(norm,'sqrt',fwhm)
+      call ref%ananorm(norm,norm_method,fwhm)
       call ref%expand2(n,nf,dx,fwhm)
       call cutnoise(ref,ithr)
       deallocate(nf)
@@ -517,18 +523,19 @@ contains
 ! must be adjusted to have the same dimension.
 ! The corresponding vector is constructed here.
 !===========================================================================!
-   subroutine match_to_ref(ref,comp,fwhm,ithr)
+   subroutine match_to_ref(ref,comp,fwhm,ithr,norm_method)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
       type(spectrum) :: ref
       type(spectrum) :: comp
       real(wp) :: norm,fwhm,ithr
+      character(len=*) :: norm_method
 
       comp%xmi = ref%xmi
       comp%xma = ref%xma
       if(comp%spectype==type_theo)then
-         call comp%ananorm(norm,'sqrt',fwhm)
+         call comp%ananorm(norm,norm_method,fwhm)
          call comp%expand2(ref%nlines,ref%freq,ref%dx,fwhm)
          call cutnoise(comp,ithr)
          !call comp%numnorm(norm,'sqrt')
@@ -848,11 +855,12 @@ contains
 !=============================================================================!
 ! The specplot routine. Create a plotable .dat file from a line spectrum
 !=============================================================================!
-   subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+   subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,norm_method,verbose)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
       character(len=*) :: fname
+      character(len=*) :: norm_method
       type(spectrum)   :: spec
       real(wp) :: xmin,xmax,dx,dxref
       real(wp) :: fscal
@@ -904,7 +912,7 @@ contains
       if(spec%spectype == type_expl)then
          call expand_ref(spec,dx,xmin,xmax,ithr)
       else
-         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm)
+         call expand_ref3(spec,dx,xmin,xmax,ithr,fwhm,norm_method)
       endif
 
       if(verbose)then

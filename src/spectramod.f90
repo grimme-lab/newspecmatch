@@ -598,7 +598,7 @@ contains
 
       open(newunit=ich,file=oname)
       do i=1,self%nlines
-         write(ich,'(1x,f12.2,1x,f12.8)')self%freq(i),self%ints(i)
+         write(ich,'(1x,f12.2,1x,f15.8)')self%freq(i),self%ints(i)
       enddo
       close(ich)
 
@@ -687,7 +687,7 @@ contains
       real(wp) :: summe
       !real(wp) :: int_sumphi        !this is a function
       !real(wp) :: int_sumphisquare  !this is a function
-      norm = 1.0d0
+      norm = 1.0_wp
       if(.not.allocated(self%peakx) .or. .not.allocated(self%peaky))then
          write(*,*) 'warning, no peak list given, cannot normalize'
          return
@@ -699,6 +699,8 @@ contains
          norm = 1.0d0 / sqrt(summe)
        case( 'max','maxpeak' )
          norm = 1.0d0 / maxval(self%peaky,1)
+       case('none','') !-- no normalization --
+         continue
        case default !-- normalize ∫Φ(ν)dν = 1
          summe =  int_sumphi(self%xmi,self%xma,self%npeaks, &
          &          self%peakx,self%peaky,1.0d0,fwhm,1)

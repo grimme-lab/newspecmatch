@@ -28,6 +28,7 @@ program NEWSPECMATCH
    character(len=:),allocatable :: fname
    character(len=:),allocatable :: fname2
    character(len=:),allocatable :: dum
+   character(len=:), allocatable :: norm
    character(len=1024) :: cmd
    character(len=126) :: atmp
    logical :: ex
@@ -38,7 +39,6 @@ program NEWSPECMATCH
    real(wp) :: fscal
    real(wp) :: dummy
    integer :: npoints
-   logical :: norm
 
    logical :: verbose
 
@@ -55,8 +55,8 @@ program NEWSPECMATCH
    fscal = 1.0d0     !-- scaling factor for calculated frequencies
 
    !npoints = nint(xmax-xmin) !-- number of points in new plot
+   norm='sqrt' !-- normalization method 'sqrt'
 
-   norm = .false.
    verbose =.true.
 
 !===================================================================================!
@@ -100,8 +100,6 @@ program NEWSPECMATCH
       ARGPARSER : select case( arg )
        case( '-ms','-matchscore' )
          RUNTYPE = 0
-         !case( '-old' )
-         !   RUNTYPE = 5
        case( '-plot')
          RUNTYPE = 1
        case( '-autoscal' )
@@ -135,13 +133,9 @@ program NEWSPECMATCH
             read(atmp,*,iostat=io) dummy
             if(io==0)xmax=dummy
          endif
-         !case( '-norm' )
-         !  norm = .true.
-         !case( '-o','-O' )
-         !  if(i+1 .le. args)then
-         !     call getarg(i+1,atmp)
-         !     oname=trim(atmp)
-         !  endif
+       case( '-norm' )
+         call getarg(i+1,atmp)
+         read(atmp,*,iostat=io) norm
        case( '-lw','-width','-fwhm' )
          if(i+1 .le. args)then
             call getarg(i+1,atmp)
@@ -182,19 +176,11 @@ program NEWSPECMATCH
 !------------------------------------------------------------------------------------------------
    select case( RUNTYPE )
     case( 0 )
-      call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose)
+      call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,norm,verbose)
     case( 1 )
-      call specplot(fname,xmin,xmax,dx,wid,noisecut,fscal,verbose)
+      call specplot(fname,xmin,xmax,dx,wid,noisecut,fscal,norm,verbose)
     case( 2 )
-      call specmatch_autoscal(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose)
-    case( 5 ) ! old specmatch version
-      !call oldspecmatch(fname,fname2,wid,noisecut,smooth,nsmooth,scores)
-      !if(verbose)then
-      !   write(*,'(1x,a,a,a,a)')'Calculated matchscore between ',trim(fname),' and ',trim(fname2)
-      !   write(*,'(1x,a,f6.4)') 'MSC = ',scores(1)
-      !else
-      !   write(*,'(1x,f6.4)') scores(1)
-      !endif
+      call specmatch_autoscal(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,norm,verbose)
     case default
       continue
    end select
