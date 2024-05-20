@@ -261,7 +261,11 @@ subroutine pr_help
    write(*,'(4x,a)')   '                              the default is FWHM = 30 cm⁻¹.'
    write(*,'(/,4x,a)') '--dx <float>                : set the distance between interpolated points'
    write(*,'(4x,a)')   '                              the default is 1 cm⁻¹.'
-   write(*,'(/,4x,a)') '--fscal <float>             : scale the frequencies of the theo. spectrum by a factor,'
+   write(*,'(/,4x,a)') '--norm <string>             : set the normalization method for the spectra.'
+   write(*,'(4x,a)')   '                              the default is "sqrt".'
+   write(*,'(/,4x,a)') '--fscal <float>             : scale the frequencies of the (first) theo. spectrum by a factor,'
+   write(*,'(4x,a)')   '                              prior to expansion with line shape functions.'
+   write(*,'(/,4x,a)') '--fscal2 <float>            : scale the frequencies of the second theo. spectrum by a factor,'
    write(*,'(4x,a)')   '                              prior to expansion with line shape functions.'
    write(*,'(/,4x,a)') '--silent,--short            : reduce printout (only print the final similarity measure)'
 
