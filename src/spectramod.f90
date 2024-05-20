@@ -155,12 +155,8 @@ contains
    subroutine spec_checkplain(self) !,n,freq,dx,outtype)
       implicit none
       class(spectrum) :: self
-      integer :: n
-      !real(wp) :: freq(n)
-      integer :: outtype
-      integer :: i,j,k
+      integer :: n, i
       real(wp) :: dxref,dxsum,ddx
-      real(wp) :: dx
       logical :: alldx,isdx
       n = self%nlines
       dxsum=0.0d0
@@ -483,9 +479,8 @@ contains
       character(len=*),intent(in) :: fname
       integer,intent(out) :: nline
       character(len=80) :: a80
-      integer :: nn, k
+      integer :: k
       integer :: ich,io
-      real(wp) :: xx(50)
       nline=0
       k=0
       open(newunit=ich,file=fname)
@@ -555,7 +550,7 @@ contains
       real(wp) :: xx(*)
       integer,intent(out) :: nn
       integer :: al,bl
-      integer :: i,j,k,l,io
+      integer :: i,io
       character(len=:),allocatable :: b
       character(len=:),allocatable :: dum
       character(len=1) :: c
@@ -598,7 +593,7 @@ contains
       implicit none
       class(spectrum) :: self
       character(len=*) :: oname
-      integer :: i,j,k,l
+      integer :: i
       integer :: ich
 
       open(newunit=ich,file=oname)
@@ -618,7 +613,7 @@ contains
       real(wp) :: fwhm
       real(wp) :: val,nmin,nmax
       real(wp) :: inc,dx
-      integer :: i,j,k,l
+      integer :: i
       integer :: ich
       dx = (nmax - nmin)/float(npoints)
       open(newunit=ich,file=oname)
@@ -646,8 +641,7 @@ contains
       class(spectrum) :: self
       real(wp),intent(out) :: norm
       character(len=*),intent(in) :: ntype
-      logical :: ex
-      integer :: i,j,k,l,n
+      integer :: i
       real(wp) :: summe
       norm = 1.0d0
       summe = 0.0d0
@@ -690,8 +684,6 @@ contains
       real(wp),intent(out) :: norm
       real(wp),intent(in) :: fwhm
       character(len=*),intent(in) :: ntype
-      logical :: ex
-      integer :: i,j,k,l,n
       real(wp) :: summe
       !real(wp) :: int_sumphi        !this is a function
       !real(wp) :: int_sumphisquare  !this is a function
@@ -727,7 +719,7 @@ contains
       real(wp),intent(in) :: dx
       real(wp),intent(in) :: xmi,xma
       real(wp),intent(in) :: fwhm
-      integer :: i,j,k,l,n
+      integer :: i,n
       real(wp) :: summe,inc
       !real(wp) :: sumphi        !this is a function
 
@@ -765,7 +757,7 @@ contains
       real(wp),intent(in) :: ref(newpoints)
       real(wp),intent(in) :: dx
       real(wp),intent(in) :: fwhm
-      integer :: i,j,k,l,n
+      integer :: i,n
       real(wp) :: summe,inc
       !real(wp) :: sumphi        !this is a function
       if(.not.allocated(self%peakx))return
@@ -798,7 +790,7 @@ contains
       real(wp),allocatable :: newints(:)
       real(wp) :: dx,xref
       integer :: n,nmin,nmax
-      integer :: i,j,k
+      integer :: i,j
       real(wp) :: dum
       dx = self%dx
       if(dx == 0.0d0)return
@@ -914,9 +906,9 @@ contains
       class(spectrum) :: self
       integer,intent(in)  :: newpoints
       integer :: nref
-      integer :: i,j,k,l,n
+      integer :: i,k,n
       real(wp) :: newdx
-      real(wp) :: summe,inc
+      real(wp) :: inc
       real(wp),allocatable :: newfreq(:)
       real(wp),allocatable :: newints(:)
       real(wp) :: x1,x2,y1,y2
@@ -960,7 +952,7 @@ contains
       class(spectrum) :: self
       real(wp),intent(in)  :: newdx
       integer :: nref
-      integer :: i,j,k,l,n
+      integer :: i,k,n
       integer  :: newpoints
       real(wp) :: summe,inc
       real(wp),allocatable :: newfreq(:)
@@ -1011,7 +1003,7 @@ contains
       class(spectrum) :: self
       real(wp) :: x, frq, ity
       integer :: first, last
-      integer :: i, j, ii
+      integer :: i, j
       x = self%freq( (first+last) / 2 )
       i = first
       j = last
@@ -1042,7 +1034,7 @@ contains
       real(wp) :: maxi,thr
       real(wp),allocatable :: mat(:,:)
       real(wp) :: d
-      integer :: i,j,k,n
+      integer :: i,k,n
 
       !-- apply threshold
       if(present(ithr))then
@@ -1113,7 +1105,7 @@ contains
       real(wp),intent(in)  :: inorm
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
-      integer :: j,k
+      integer :: j
       !real(wp) :: philorentz,phigauss
       sumphi = 0.0_wp
       select case(t)
@@ -1233,8 +1225,6 @@ contains
       real(wp),intent(in)  :: nu0
       real(wp),intent(in)  :: i0
       real(wp),intent(in)  :: w
-      !real(wp) :: subfunc
-      real(wp) :: x
       real(wp) :: dum,resa,resb
       int_philorentz = 0.0_wp
       dum  = -i0 * (0.5_wp*w)
@@ -1266,8 +1256,6 @@ contains
       real(wp),intent(in)  :: nu0
       real(wp),intent(in)  :: i0
       real(wp),intent(in)  :: w
-      !real(wp) :: subfunc
-      real(wp) :: x
       real(wp) :: dum,resa,resb
       real(wp),parameter :: pi = 3.14159265359_wp
       real(wp) :: ln2
@@ -1306,8 +1294,7 @@ contains
       real(wp),intent(in)  :: inorm
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
-      integer :: j,k
-      !real(wp) :: int_philorentz,int_phigauss
+      integer :: j
       int_sumphi = 0.0_wp
       select case(t)
        case( 1 )  !-- Lorentzian line shape function
@@ -1353,7 +1340,6 @@ contains
       real(wp),intent(in)  :: inorm
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
-      integer :: j,k
       real(wp) :: counter
       !real(wp) :: sumphi
       numint_sumphi = 0.0_wp
@@ -1528,7 +1514,7 @@ contains
       real(wp),intent(in)  :: w
       !real(wp) :: subfunc
       real(wp) :: w2,w22,w23,x1,x2,ii,x2b,x1b
-      real(wp) :: t1,t2,t21,t22,t3,t11,t12,t31
+      real(wp) :: t1,t2,t11,t12
       aux_philorentzprod2 = 0.0_wp
       w2 = 0.5_wp*w
       w22 = w2*w2
@@ -1589,8 +1575,8 @@ contains
       real(wp),intent(in)  :: i0
       real(wp),intent(in)  :: w
       !real(wp) :: subfunc
-      real(wp) :: w2,w22,w23,x1,x2,ii
-      real(wp) :: t1,t2,t21,t22,t3,t11,t12,t31
+      real(wp) :: w2,w22,x1,ii
+      real(wp) :: t1,t2,t11,t12
       aux_philorentzsquare = 0.0_wp
       w2 = 0.5_wp*w
       w22 = w2*w2
@@ -1641,7 +1627,7 @@ contains
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
 
-      integer :: k,l,m,n
+      integer :: k,l
 
       !real(wp) :: philorentzprod,phigaussprod,sumphi
 
@@ -1716,7 +1702,7 @@ contains
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
 
-      integer :: k,l,m,n
+      integer :: k,l
 
       real(wp) :: dnu,nuref
       !real(wp) :: int_philorentzprod,sumphiprod
@@ -1792,7 +1778,7 @@ contains
       real(wp),intent(in)  :: w
       integer, intent(in)  :: t
 
-      integer :: k,l,m,n
+      integer :: k,l
 
       real(wp) :: dnu,nuref
       !real(wp) :: int_philorentzsquare,sumphiprod,int_philorentzprod

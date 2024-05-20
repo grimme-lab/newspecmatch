@@ -47,7 +47,7 @@ contains
       real(wp) :: xmin,xmax,dx,dxref
       real(wp) :: fscal
       real(wp) :: ithr,fwhm
-      integer :: i,j,k,l
+      integer :: i
 
       logical :: verbose
       logical :: vverbose
@@ -155,11 +155,10 @@ contains
       type(spectrum)   :: spec2
       type(spectrum)   :: specup
       type(spectrum)   :: specup2
-      real(wp) :: norm
       real(wp) :: xmin,xmax,dx,dxref
       real(wp) :: fscal
       real(wp) :: ithr,fwhm
-      integer :: i,j,k,l
+      integer :: i
 
       logical :: verbose
       logical :: vverbose
@@ -351,7 +350,6 @@ contains
       type(spectrum) :: placeholder
       type(spectrum) :: placeholder2
       character(len=256) :: atmp
-      character(len=:),allocatable :: btmp
 
       integer :: type1,type2
 
@@ -554,7 +552,7 @@ contains
       implicit none
       type(spectrum) :: spect
       real(wp) :: ithr
-      integer :: i,j
+      integer :: i
       real(wp) :: frac,imax
 
       imax = maxval(spect%ints,i)
@@ -638,9 +636,7 @@ contains
       !real(wp) :: schwarzinequal  !this is a function
       !real(wp) :: euclidnorm      !this is a function
       integer :: n
-      integer :: i,j,k
-      real(wp),allocatable :: w(:,:)
-      real(wp) :: norm(2)
+      integer :: i
       real(wp) :: sum1,sum2,sum3,sum4
 
       n = ref%nlines
@@ -767,7 +763,6 @@ contains
       integer  :: n
       real(wp) :: u(n)
       real(wp) :: v(n)
-      real(wp) :: d
       integer  :: i
       real(wp) :: sum1,sum2
 
@@ -859,12 +854,9 @@ contains
       implicit none
       character(len=*) :: fname
       type(spectrum)   :: spec
-      type(spectrum)   :: spec2
-      real(wp) :: norm
       real(wp) :: xmin,xmax,dx,dxref
       real(wp) :: fscal
       real(wp) :: ithr,fwhm
-      integer :: i,j,k,l
 
       logical :: verbose
       logical :: vverbose

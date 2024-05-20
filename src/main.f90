@@ -21,15 +21,13 @@ program NEWSPECMATCH
    use specmatchmod
    implicit none
 
-   integer :: i,j,k,l,args
-   integer :: io,b
+   integer :: i,args
+   integer :: io
    integer :: RUNTYPE
    character(len=:),allocatable :: arg
    character(len=:),allocatable :: fname
    character(len=:),allocatable :: fname2
    character(len=:),allocatable :: dum
-   character(len=:),allocatable :: oname
-   character(len=:),allocatable :: comname
    character(len=1024) :: cmd
    character(len=126) :: atmp
    logical :: ex
@@ -41,10 +39,6 @@ program NEWSPECMATCH
    real(wp) :: dummy
    integer :: npoints
    logical :: norm
-   logical  :: smooth
-   integer  :: nsmooth
-
-   real(wp) :: scores(2)
 
    logical :: verbose
 
