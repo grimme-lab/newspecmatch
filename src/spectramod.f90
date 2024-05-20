@@ -112,10 +112,11 @@ end subroutine spec_deallocate
 ! spectra in the Turbomole/xtb format and plain x/y lists
 ! The input fname will be the file name
 !=================================================================================!
-integer function spec_gettype(fname)
+integer function spec_gettype(fname,raman)
     implicit none
     character(len=*) :: fname
     character(len=128) :: atmp
+    logical, intent(in) :: raman
     integer :: x, ich, io
     logical :: ex
     inquire(file=fname,exist=ex)
@@ -138,9 +139,16 @@ integer function spec_gettype(fname)
         do
            read(ich,'(a)',iostat=io) atmp
            if(io<0)exit !EOF
-           if(index(atmp,'$ir_spectrum').ne.0)then
-               x = torca
-               exit
+           if (raman) then
+               if(index(atmp,'$raman_spectrum').ne.0)then
+                   x = torca
+                   exit
+               endif
+           else
+               if(index(atmp,'$ir_spectrum').ne.0)then
+                   x = torca
+                   exit
+               endif
            endif
          enddo
     endif
@@ -198,11 +206,12 @@ end subroutine spec_checkplain
 ! subroutine to read in an vibrational spectrum automatically depending on the
 ! file type.
 !=================================================================================!
-subroutine spec_read(self,fname)
+subroutine spec_read(self,fname,raman)
     implicit none
     class(spectrum) :: self
     character(len=*) :: fname
     logical :: ex
+    logical,intent(in) :: raman
     integer :: n
 
     inquire(file=fname,exist=ex)
@@ -212,7 +221,7 @@ subroutine spec_read(self,fname)
 
     call self%dealloc()
     self%filename = fname
-    select case( spec_gettype(fname) )
+    select case( spec_gettype(fname,raman) )
     case( tplain )
         self%spectype = type_plain
         call rdplain0(n,fname)
@@ -228,17 +237,17 @@ subroutine spec_read(self,fname)
         call rdtmtheo0(n,fname)
         allocate(self%freq(n),self%ints(n), source = 0.0_wp)
         self%nlines = n
-        call rdtmtheo1(n,self%freq,self%ints,fname)
+        call rdtmtheo1(n,self%freq,self%ints,fname,raman)
         self%npeaks = n
         call self%sort(1,n)
         call move_alloc(self%freq,self%peakx)
         call move_alloc(self%ints,self%peaky)
     case( torca )
         self%spectype = type_theo
-        call rdorcatheo0(n,fname)
+        call rdorcatheo0(n,fname,raman)
         allocate(self%freq(n),self%ints(n), source = 0.0_wp)
         self%nlines = n
-        call rdorcatheo1(n,self%freq,self%ints,fname)
+        call rdorcatheo1(n,self%freq,self%ints,fname,raman)
         self%npeaks = n
         call self%sort(1,n)
         call move_alloc(self%freq,self%peakx)
@@ -441,9 +450,10 @@ subroutine rdtmtheo0(nline,fname)
       return
 end subroutine rdtmtheo0
 
-subroutine rdtmtheo1(nline,freq,ints,fname)
+subroutine rdtmtheo1(nline,freq,ints,fname,raman)
       implicit none
       character(len=*),intent(in) :: fname
+      logical,intent(in),optional :: raman
       integer,intent(in) :: nline
       real(wp),intent(out) :: freq(nline)
       real(wp),intent(out) :: ints(nline)
@@ -463,7 +473,18 @@ subroutine rdtmtheo1(nline,freq,ints,fname)
          if(xx(2).gt.1.d-6.and.nn.ge.2) then
             k = k + 1
             freq(k) = xx(2)
-            ints(k) = xx(3)
+            if ( present(raman) ) then
+                if (raman) then
+                    ints(k) = xx(4)
+                else
+                    ints(k) = xx(3)
+                endif
+            else
+                ints(k) = xx(3)
+            endif
+            ! ## PRINT OUT INT FOR DEV ##
+            !write(*,*) ints(k)
+            ! ##
          endif
       enddo
       close(ich)
@@ -478,9 +499,10 @@ end subroutine rdtmtheo1
 ! subroutine rdorcatheo1 then reads the values.
 !
 !=================================================================================!
-subroutine rdorcatheo0(nline,fname)
+subroutine rdorcatheo0(nline,fname,raman)
       implicit none
       character(len=*),intent(in) :: fname
+      logical,intent(in),optional :: raman
       integer,intent(out) :: nline
       character(len=80) :: a80
       integer :: nn, k
@@ -495,23 +517,31 @@ subroutine rdorcatheo0(nline,fname)
          a80 = adjustl(a80)
          if(a80(1:1)=='#')  cycle !cycle comments
          if(len_trim(a80)<1)cycle !cycle empty lines
-         if(index(a80,'$ir_spectrum').ne.0)then
-            read(ich,*)k
-           exit 
-         endif    
+         if (raman) then
+             if(index(a80,'$raman_spectrum').ne.0)then
+                 read(ich,*)k
+                 exit
+             endif
+         else
+             if(index(a80,'$ir_spectrum').ne.0)then
+                 read(ich,*)k
+                 exit
+             endif
+         endif
       enddo
       close(ich)
       nline = k
       return
 end subroutine rdorcatheo0
 
-subroutine rdorcatheo1(nline,freq,ints,fname)
+subroutine rdorcatheo1(nline,freq,ints,fname,raman)
       implicit none
       character(len=*),intent(in) :: fname
       integer,intent(in) :: nline
+      logical,intent(in),optional :: raman
       real(wp),intent(out) :: freq(nline)
       real(wp),intent(out) :: ints(nline)
-      character(len=80) :: a80
+      character(len=128) :: a80
       integer :: nn, k
       integer :: ich,io
       real(wp) :: xx(50)
@@ -525,20 +555,38 @@ subroutine rdorcatheo1(nline,freq,ints,fname)
          a80 = adjustl(a80)
          if(a80(1:1)=='#')  cycle !cycle comments
          if(len_trim(a80)<1)cycle !cycle empty lines
-         if(index(a80,'$ir_spectrum').ne.0)then
-             read(ich,*) io
-             do
-               read(ich,'(a)',iostat=io) a80
-               if(len_trim(a80)<1)exit
-               if(index(a80,'$').ne.0)exit
-               if(io<0)exit !EOF
-               call sreadl(a80,xx,nn)
-               if(xx(1).gt.1.d-6.and.nn.ge.2) then
-                   k = k + 1
-                   freq(k) = xx(1)
-                   ints(k) = xx(2)
-               endif
-             enddo
+         if (raman) then
+            if(index(a80,'$raman_spectrum').ne.0)then
+                 read(ich,*) io
+                 do
+                   read(ich,'(a)',iostat=io) a80
+                   if(len_trim(a80)<1)exit
+                   if(index(a80,'$').ne.0)exit
+                   if(io<0)exit !EOF
+                   call sreadl(a80,xx,nn)
+                   if(xx(1).gt.1.d-6.and.nn.ge.2) then
+                       k = k + 1
+                       freq(k) = xx(1)
+                       ints(k) = xx(2)
+                   endif
+                 enddo
+             endif
+         else
+             if(index(a80,'$ir_spectrum').ne.0)then
+                 read(ich,*) io
+                 do
+                     read(ich,'(a)',iostat=io) a80
+                     if(len_trim(a80)<1)exit
+                     if(index(a80,'$').ne.0)exit
+                     if(io<0)exit !EOF
+                     call sreadl(a80,xx,nn)
+                     if(xx(1).gt.1.d-6.and.nn.ge.2) then
+                         k = k + 1
+                         freq(k) = xx(1)
+                         ints(k) = xx(2)
+                     endif
+                 enddo
+             endif
          endif
       enddo
       close(ich)

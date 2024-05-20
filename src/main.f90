@@ -46,7 +46,7 @@ program NEWSPECMATCH
 
       real(wp) :: scores(2)
 
-      logical :: verbose
+      logical :: verbose,raman
 
 !====================================================================================!
 !-- some Defaults
@@ -64,8 +64,12 @@ program NEWSPECMATCH
 
      norm = .false.
      verbose =.true.
+
+     ! Raman workflow
+     raman = .false.
  
 !===================================================================================!
+
 
       args = iargc()
       if(args.lt.1)then
@@ -168,6 +172,8 @@ program NEWSPECMATCH
            !  endif
            case( '-short','-silent' )
              verbose = .false.  
+           case( '-raman','-polgrad' )
+             raman = .true.
            case( '-fscal' )
              if(i+1 .le. args)then
                call getarg(i+1,atmp)
@@ -179,20 +185,22 @@ program NEWSPECMATCH
            end select ARGPARSER
       enddo
 !------------------------------------------------------------------------------------------------
+
      if(verbose)then
        call pr_header  
        write(*,'(/,1x,a)')'Command line input:'
        call get_command(cmd)
        write(*,'(1x,a,a,/)')'> ',trim(cmd)
      endif
+     if (raman)  write(*,'(1x,a,/)') "Switched on Raman mode."
 !------------------------------------------------------------------------------------------------
       select case( RUNTYPE )
          case( 0 )
-           call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose)
+           call specmatch(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose,raman)
          case( 1 )
-           call specplot(fname,xmin,xmax,dx,wid,noisecut,fscal,verbose)
+           call specplot(fname,xmin,xmax,dx,wid,noisecut,fscal,verbose,raman)
          case( 2 )  
-           call specmatch_autoscal(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose)
+           call specmatch_autoscal(fname,fname2,xmin,xmax,dx,wid,noisecut,fscal,verbose,raman)
          case( 5 ) ! old specmatch version  
            !call oldspecmatch(fname,fname2,wid,noisecut,smooth,nsmooth,scores)
            !if(verbose)then
@@ -229,10 +237,11 @@ subroutine pr_header
        write(*,'(5x,a)') ' _______________________________'
        write(*,'(5x,a)') '|                               |'  
        write(*,'(5x,a)') '|    N E W S P E C M A T C H    |'
-       write(*,'(5x,a)') '|      P.Pracht, Aug. 2020      |'
+       write(*,'(5x,a)') '|      P.Pracht, M. Mueller     |'
+       write(*,'(5x,a)') '|         Sep. 2021             |'
        write(*,'(5x,a)') '|     MCTC, Bonn University     |'
        write(*,'(5x,a)') '|_______________________________|'
-       write(*,'(5x,a)') 'version 1.0'
+       write(*,'(5x,a)') 'version 1.1'
        call pr_disclaim
 end subroutine pr_header
 

@@ -34,7 +34,7 @@ contains
 ! For both spectra a linear vector is constructed which can then be used for
 ! the calculation of matchscores
 !=============================================================================!
-subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose,raman)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
@@ -50,6 +50,7 @@ subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
       integer :: i,j,k,l
 
       logical :: verbose
+      logical, intent(in) :: raman
       logical :: vverbose
       logical :: printfile
 
@@ -59,7 +60,7 @@ subroutine specmatch(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
 
       dx=0.0d0
 
-      call determine_ref(fname,bname,spec,spec2,verbose)
+      call determine_ref(fname,bname,spec,spec2,verbose,raman)
 
       if(vverbose)then
       write(*,*)
@@ -144,7 +145,7 @@ end subroutine specmatch
 ! alternative specmatch routine to automatically 
 ! determine a scaling factor for the theoretical spectrum
 !=============================================================================!
-subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose,raman)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
@@ -162,6 +163,7 @@ subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbos
       integer :: i,j,k,l
 
       logical :: verbose
+      logical,intent(in) :: raman
       logical :: vverbose
       logical :: printfile
 
@@ -181,7 +183,7 @@ subroutine specmatch_autoscal(fname,bname,xmin,xmax,dxref,fwhm,ithr,fscal,verbos
 
       dx=0.0d0
 
-      call determine_ref(fname,bname,spec,spec2,verbose)
+      call determine_ref(fname,bname,spec,spec2,verbose,raman)
 
       if(vverbose)then
       write(*,*)
@@ -337,7 +339,7 @@ end subroutine specmatch_autoscal
 ! which of the two will be used as the reference.
 ! if one of the files is not a valid, the program will stop
 !=============================================================================!
-subroutine determine_ref(fname1,fname2,ref,comp,verbose)
+subroutine determine_ref(fname1,fname2,ref,comp,verbose,raman)
       use spectramod
       implicit none
       type(spectrum) :: ref
@@ -345,6 +347,7 @@ subroutine determine_ref(fname1,fname2,ref,comp,verbose)
       character(len=*) :: fname1
       character(len=*) :: fname2
       logical :: verbose
+      logical,intent(in) :: raman
       character(len=:),allocatable :: refname
       character(len=:),allocatable :: compname
 
@@ -355,8 +358,8 @@ subroutine determine_ref(fname1,fname2,ref,comp,verbose)
 
       integer :: type1,type2
 
-      type1 = spec_gettype(fname1)
-      type2 = spec_gettype(fname2)
+      type1 = spec_gettype(fname1,raman)
+      type2 = spec_gettype(fname2,raman)
 
       if(type1==0)then
          write(atmp,'(a,1x,a,1x,a)') 'file',trim(fname1),'invalid. must stop'
@@ -369,11 +372,10 @@ subroutine determine_ref(fname1,fname2,ref,comp,verbose)
          error stop
       endif
 
-       call placeholder%read(fname1)
+       call placeholder%read(fname1,raman)
        type1=placeholder%spectype
        call placeholder%dealloc
-       write(*,*) fname2
-       call placeholder2%read(fname2)
+       call placeholder2%read(fname2,raman)
        type2=placeholder2%spectype
        call placeholder2%dealloc
     !--- if one of the two spectra is an experimental one, use this as the reference.
@@ -396,8 +398,8 @@ subroutine determine_ref(fname1,fname2,ref,comp,verbose)
        endif
 
    !--- read the spectra accordingly   
-      call ref%read(refname)
-      call comp%read(compname) 
+      call ref%read(refname,raman)
+      call comp%read(compname,raman)
 
       return
 end subroutine determine_ref
@@ -853,7 +855,7 @@ end subroutine maskinvert
 !=============================================================================!
 ! The specplot routine. Create a plotable .dat file from a line spectrum
 !=============================================================================!
-subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
+subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose,raman)
       use iso_fortran_env, wp => real64
       use spectramod
       implicit none
@@ -867,6 +869,7 @@ subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
       integer :: i,j,k,l
 
       logical :: verbose
+      logical,intent(in) :: raman
       logical :: vverbose
       logical :: printfile
 
@@ -875,7 +878,7 @@ subroutine specplot(fname,xmin,xmax,dxref,fwhm,ithr,fscal,verbose)
 
       dx=0.0d0
 
-      call spec%read(fname)
+      call spec%read(fname,raman)
 
       if(vverbose)then
       write(*,*)
